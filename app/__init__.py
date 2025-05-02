@@ -3,9 +3,12 @@ from flask_cors import CORS
 import os
 
 
+
 def create_app():
     app = Flask(__name__)
-    CORS(app)
+    CORS(app)  # Allow all origins (for development)
+    # OR for production:
+    CORS(app, resources={r"/api/*": {"origins": "https://your-frontend-url.onrender.com"}})
 
     # Configuration
     app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), '../knowledge')

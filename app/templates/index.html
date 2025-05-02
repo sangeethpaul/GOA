@@ -5,8 +5,9 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        #response { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        #response { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; min-height: 50px; }
         #sources { margin-top: 10px; font-size: 0.9em; color: #666; }
+        .error { color: #d32f2f; }
     </style>
 </head>
 <body>
@@ -19,32 +20,55 @@
     <div id="sources"></div>
 
     <script>
-        async function askQuestion() {
-            const question = document.getElementById('questionInput').value;
-            if (!question) return;
+        // Replace with your actual Render backend URL
+        const API_URL = "https://your-backend-service.onrender.com";
 
-            document.getElementById('response').innerHTML = "Searching...";
+        async function askQuestion() {
+            const question = document.getElementById('questionInput').value.trim();
+            if (!question) {
+                showError("Please enter a question");
+                return;
+            }
+
+            const responseDiv = document.getElementById('response');
+            responseDiv.innerHTML = "<i>Searching knowledge base...</i>";
 
             try {
-                const response = await fetch('/', {
+                const response = await fetch(`${API_URL}/api/questions`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
                     body: JSON.stringify({ question: question })
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
                 const data = await response.json();
 
                 if (data.error) {
-                    document.getElementById('response').innerHTML = `Error: ${data.error}`;
+                    showError(data.error);
                     return;
                 }
 
                 document.getElementById('response').innerHTML = marked.parse(data.response);
-                document.getElementById('sources').innerHTML =
-                    `Sources: ${data.sources.join(', ')}`;
+                document.getElementById('sources').innerHTML = data.sources
+                    ? `Sources: ${data.sources.join(', ')}`
+                    : '';
+
             } catch (err) {
-                document.getElementById('response').innerHTML = `Network error: ${err}`;
+                console.error("Fetch error:", err);
+                showError(`Failed to get answer. Please check your connection and try again.`);
             }
+        }
+
+        function showError(message) {
+            document.getElementById('response').innerHTML =
+                `<span class="error">${message}</span>`;
+            document.getElementById('sources').innerHTML = '';
         }
     </script>
 </body>
